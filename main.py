@@ -1,7 +1,9 @@
 from src.extract.fetch_api import fetch as ejecutar_extraccion
 from src.transform.cargar_datos import cargar_datos
+from src.transform.limpiar_datos import limpiar_datos
 
 datos = {}
+datos_limpios = {}
 print("Bienvenido al sistema de análisis de datos (en proceso) de PetMind")
 while True:
     print("""
@@ -32,9 +34,25 @@ while True:
         case 2:
             datos = cargar_datos()
         case 3:
-            pass
+            if not datos:
+                print("Primero debes cargar los datos usando la opción 2.")
+            else:
+                datos_limpios = limpiar_datos(datos)
+                print("Proceso de limpieza finalizado.")
         case 4:
-            pass
+            if not datos_limpios:
+                print("Primero debes limpiar los datos usando la opción 3.")
+            else:
+                for nombre, df in datos_limpios.items():
+                    print(f"\n{'=' * 55}")
+                    print(f"DATAFRAME LIMPIO: {nombre.upper()}")
+                    print(f"{'=' * 55}")
+                    print(df.to_string(index=False))
+
+                    print("\nValores nulos por columna:")
+                    print(df.isnull().sum())
+
+                    print(f"\nCantidad de registros limpios: {len(df)}")
         case 5:
             pass
         case 6:
