@@ -1,9 +1,11 @@
 from src.extract.fetch_api import fetch as ejecutar_extraccion
 from src.transform.cargar_datos import cargar_datos
+from src.transform.combinar_datos import combinar_datos
 from src.transform.limpiar_datos import limpiar_datos
 
 datos = {}
 datos_limpios = {}
+datos_combinados = None
 print("Bienvenido al sistema de análisis de datos (en proceso) de PetMind")
 while True:
     print("""
@@ -54,6 +56,13 @@ while True:
 
                     print(f"\nCantidad de registros limpios: {len(df)}")
         case 5:
-            pass
+            if not datos_limpios:
+                print("Primero debes limpiar los datos usando la opción 3.")
+            else:
+                datos_combinados = combinar_datos(datos_limpios)
+                print(f"\n{'=' * 55}")
+                print("DATOS COMBINADOS: FAVORITE + USER (primeros 10)")
+                print(f"{'=' * 55}")
+                print(datos_combinados.head(10).to_string(index=False))
         case 6:
             pass
