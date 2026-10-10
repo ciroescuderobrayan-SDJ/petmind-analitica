@@ -60,9 +60,6 @@ while True:
                 print("Primero debes limpiar los datos usando la opción 3.")
             else:
                 datos_combinados = combinar_datos(datos_limpios)
-                print(f"\n{'=' * 55}")
-                print("DATOS COMBINADOS: FAVORITE + USER (primeros 10)")
-                print(f"{'=' * 55}")
-                print(datos_combinados.head(10).to_string(index=False))
+                print(datos_combinados.to_string(index=False))
         case 6:
             pass
