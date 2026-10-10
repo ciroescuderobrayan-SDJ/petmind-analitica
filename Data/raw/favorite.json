@@ -1,0 +1,354 @@
+[
+  {
+    "id": 100,
+    "id_user": 29,
+    "id_campaign": 18,
+    "id_pet": 55,
+    "id_foundation": 8
+  },
+  {
+    "id": 101,
+    "id_user": 29,
+    "id_campaign": 17,
+    "id_pet": 55,
+    "id_foundation": 10
+  },
+  {
+    "id": 102,
+    "id_user": -5,
+    "id_campaign": 6,
+    "id_pet": 52,
+    "id_foundation": 9
+  },
+  {
+    "id": 103,
+    "id_user": 31,
+    "id_campaign": 21,
+    "id_pet": 40,
+    "id_foundation": 3
+  },
+  {
+    "id": 104,
+    "id_user": 7,
+    "id_campaign": 15,
+    "id_pet": 20,
+    "id_foundation": 3
+  },
+  {
+    "id": 105,
+    "id_user": 0,
+    "id_campaign": 18,
+    "id_pet": 52,
+    "id_foundation": 12
+  },
+  {
+    "id": 106,
+    "id_user": 3,
+    "id_campaign": 20,
+    "id_pet": 26,
+    "id_foundation": 8
+  },
+  {
+    "id": 107,
+    "id_user": 40,
+    "id_campaign": 21,
+    "id_pet": 11,
+    "id_foundation": 10
+  },
+  {
+    "id": 108,
+    "id_user": 1,
+    "id_campaign": "abc",
+    "id_pet": 5,
+    "id_foundation": 1
+  },
+  {
+    "id": 109,
+    "id_user": 3,
+    "id_campaign": 7,
+    "id_pet": 57,
+    "id_foundation": 4
+  },
+  {
+    "id": 110,
+    "id_user": 39,
+    "id_campaign": 1,
+    "id_pet": 50,
+    "id_foundation": 8
+  },
+  {
+    "id": 111,
+    "id_user": 21,
+    "id_campaign": 15,
+    "id_pet": null,
+    "id_foundation": 4
+  },
+  {
+    "id": 112,
+    "id_user": 34,
+    "id_campaign": 8,
+    "id_pet": 41,
+    "id_foundation": 5
+  },
+  {
+    "id": 113,
+    "id_user": 32,
+    "id_campaign": 1,
+    "id_pet": 43,
+    "id_foundation": 3.7
+  },
+  {
+    "id": 114,
+    "id_user": 30,
+    "id_campaign": 21,
+    "id_pet": 18,
+    "id_foundation": 7
+  },
+  {
+    "id": 115,
+    "id_user": 36,
+    "id_campaign": 3,
+    "id_pet": 46,
+    "id_foundation": 5
+  },
+  {
+    "id": 116,
+    "id_user": "12",
+    "id_campaign": 25,
+    "id_pet": 15,
+    "id_foundation": 9
+  },
+  {
+    "id": 117,
+    "id_user": 19,
+    "id_campaign": 1,
+    "id_pet": 5,
+    "id_foundation": 10
+  },
+  {
+    "id": 118,
+    "id_user": 7,
+    "id_campaign": 13,
+    "id_pet": 7,
+    "id_foundation": 5
+  },
+  {
+    "id": 119,
+    "id_user": 25,
+    "id_campaign": 3,
+    "id_pet": -1,
+    "id_foundation": 11
+  },
+  {
+    "id": 120,
+    "id_user": 1,
+    "id_campaign": 7,
+    "id_pet": 14,
+    "id_foundation": 1
+  },
+  {
+    "id": 121,
+    "id_user": 31,
+    "id_campaign": 13,
+    "id_pet": 46,
+    "id_foundation": 7
+  },
+  {
+    "id": 122,
+    "id_user": 27,
+    "id_campaign": 999999999999,
+    "id_pet": 37,
+    "id_foundation": 11
+  },
+  {
+    "id": 123,
+    "id_user": 13,
+    "id_campaign": 25,
+    "id_pet": 44,
+    "id_foundation": 5
+  },
+  {
+    "id": 124,
+    "id_user": 22,
+    "id_campaign": 3,
+    "id_pet": 20,
+    "id_foundation": 6
+  },
+  {
+    "id": "abc",
+    "id_user": 1,
+    "id_campaign": 14,
+    "id_pet": 49,
+    "id_foundation": 2
+  },
+  {
+    "id": 126,
+    "id_user": 9,
+    "id_campaign": 8,
+    "id_pet": 46,
+    "id_foundation": 2
+  },
+  {
+    "id": 127,
+    "id_user": 1,
+    "id_campaign": 2,
+    "id_pet": 30,
+    "id_foundation": 8
+  },
+  {
+    "id": 128,
+    "id_user": 12,
+    "id_campaign": 22,
+    "id_pet": 36,
+    "id_foundation": null
+  },
+  {
+    "id": 129,
+    "id_user": 29,
+    "id_campaign": 17,
+    "id_pet": 13,
+    "id_foundation": 12
+  },
+  {
+    "id": 130,
+    "id_user": 9,
+    "id_campaign": 14,
+    "id_pet": 42,
+    "id_foundation": 7
+  },
+  {
+    "id": 131,
+    "id_user": true,
+    "id_campaign": 13,
+    "id_pet": 27,
+    "id_foundation": 4
+  },
+  {
+    "id": 132,
+    "id_user": 1,
+    "id_campaign": 9,
+    "id_pet": 56,
+    "id_foundation": 10
+  },
+  {
+    "id": 133,
+    "id_user": 20,
+    "id_campaign": 1,
+    "id_pet": 14,
+    "id_foundation": 3
+  },
+  {
+    "id": 134,
+    "id_user": 26,
+    "id_campaign": -20,
+    "id_pet": 42,
+    "id_foundation": 10
+  },
+  {
+    "id": 135,
+    "id_user": 7,
+    "id_campaign": 2,
+    "id_pet": 10,
+    "id_foundation": 4
+  },
+  {
+    "id": 136,
+    "id_user": 29,
+    "id_campaign": 9,
+    "id_pet": 1,
+    "id_foundation": 10
+  },
+  {
+    "id": 137,
+    "id_user": 22,
+    "id_campaign": 10,
+    "id_pet": "",
+    "id_foundation": 2
+  },
+  {
+    "id": 138,
+    "id_user": 5,
+    "id_campaign": 3,
+    "id_pet": 14,
+    "id_foundation": 10
+  },
+  {
+    "id": 139,
+    "id_user": 16,
+    "id_campaign": 1,
+    "id_pet": 39,
+    "id_foundation": 6
+  },
+  {
+    "id": 140,
+    "id_user": 24,
+    "id_campaign": 20,
+    "id_pet": 30,
+    "id_foundation": 0
+  },
+  {
+    "id": 141,
+    "id_user": 38,
+    "id_campaign": 16,
+    "id_pet": 54,
+    "id_foundation": 10
+  },
+  {
+    "id": 142,
+    "id_user": 9,
+    "id_campaign": 13,
+    "id_pet": 12,
+    "id_foundation": 11
+  },
+  {
+    "id": 143,
+    "id_user": [
+      1,
+      2
+    ],
+    "id_campaign": 10,
+    "id_pet": 59,
+    "id_foundation": 4
+  },
+  {
+    "id": 144,
+    "id_user": 40,
+    "id_campaign": 8,
+    "id_pet": 47,
+    "id_foundation": 4
+  },
+  {
+    "id": 145,
+    "id_user": 11,
+    "id_campaign": 24,
+    "id_pet": 41,
+    "id_foundation": 9
+  },
+  {
+    "id": 146,
+    "id_user": 13,
+    "id_campaign": 22,
+    "id_foundation": 8
+  },
+  {
+    "id": 110,
+    "id_user": 39,
+    "id_campaign": 3,
+    "id_pet": 27,
+    "id_foundation": 1
+  },
+  {
+    "id": 148,
+    "id_user": 7,
+    "id_campaign": 4,
+    "id_pet": 3,
+    "id_foundation": 9
+  },
+  {
+    "id": 149,
+    "id_user": 29,
+    "id_campaign": 18,
+    "id_pet": 55,
+    "id_foundation": 8
+  }
+]
