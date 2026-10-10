@@ -62,4 +62,24 @@ while True:
                 datos_combinados = combinar_datos(datos_limpios)
                 print(datos_combinados.to_string(index=False))
         case 6:
-            pass
+            if datos_combinados is None:
+                print("Primero debes combinar los datos usando la opción 5.")
+            else:
+                # 1. Frecuencia: usuario con más favoritos.
+                conteo = datos_combinados["id_user"].value_counts()
+                id_usuario = conteo.idxmax()
+                nombre = datos_combinados.loc[
+                    datos_combinados["id_user"] == id_usuario, "name"
+                ].iloc[0]
+                print("\n1. ¿Qué usuario tiene más favoritos?")
+                print(f"{nombre} (id {id_usuario}) con {conteo.max()} favoritos.")
+
+                # 2. Agregación: cantidad de favoritos por ciudad.
+                print("\n2. ¿Cuántos favoritos hay por ciudad?")
+                print(datos_combinados.groupby("city").size().to_string())
+
+                # 3. Filtrado y conteo: usuarios que viven en Medellín.
+                usuarios = datos_limpios["user"]
+                usuarios_medellin = usuarios[usuarios["city"] == "medellín"]
+                print("\n3. ¿Cuántos usuarios son de Medellín?")
+                print(f"{len(usuarios_medellin)} usuarios.")
