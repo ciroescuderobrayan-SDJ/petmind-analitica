@@ -6,21 +6,21 @@ import requests
 
 
 ENDPOINTS_API = {
-    "user": "https://6ac0faa8309c92da039c3567.mockapi.io/api/v1/user",
-    "favorite": "https://6ac0faa8309c92da039c3567.mockapi.io/api/v1/favorite",
+    "user": "https://backendpetmind2-3bhm9fqy.b4a.run/api/usuarios",
+    "favorite": "https://backendpetmind2-3bhm9fqy.b4a.run/api/favoritos",
 }
 TIEMPO_ESPERA_SOLICITUD = 30
 CARPETA_DATOS_ORIGINALES = Path(__file__).resolve().parents[2] / "Data" / "raw"
 
 
-def obtener_datos_endpoint(direccion: str) -> Any:
+def obtener_datos_endpoint(direccion: str):
     """Obtiene datos JSON desde un endpoint de la API."""
     respuesta = requests.get(direccion, timeout=TIEMPO_ESPERA_SOLICITUD)
     respuesta.raise_for_status()
     return respuesta.json()
 
 
-def guardar_json(datos: Any, ruta_salida: Path) -> None:
+def guardar_json(datos, ruta_salida: Path):
     """Guarda los datos de la API como JSON UTF-8 y crea la carpeta si es necesario."""
     ruta_salida.parent.mkdir(parents=True, exist_ok=True)
     ruta_salida.write_text(
