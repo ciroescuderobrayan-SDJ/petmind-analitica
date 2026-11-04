@@ -118,6 +118,14 @@ Este endpoint:
 4. Calcula las agrupaciones.
 5. Devuelve una colección JSON para el frontend.
 
+La limpieza conserva los registros que tienen algunos campos nulos. Solo se
+eliminan filas completamente vacías y duplicados exactos. Algunos campos
+numéricos secundarios, como `edadMeses`, `contadorVisitas`, `monto` y
+`porcentajeAfinidad`, pueden completarse usando el promedio de los valores
+disponibles. Las especies faltantes se clasifican como `OTRO`, que es la
+categoría definida por el proyecto. No se inventan identificadores, estados,
+nombres ni relaciones faltantes.
+
 La respuesta contiene actualmente:
 
 - `mascotasPorEspecie`
@@ -184,32 +192,180 @@ Start command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 También se puede configurar `BACKEND_URL` como variable de entorno en Render.
 
-## Estado del proyecto
+## Documentación funcional
 
-- [x] Crear la aplicación FastAPI.
-- [x] Crear un endpoint de salud.
-- [x] Consultar el backend Spring Boot.
-- [x] Convertir las respuestas JSON en `DataFrame`.
-- [x] Limpiar los datos antes de analizarlos.
-- [x] Generar seis colecciones para las gráficas.
-- [x] Evitar la persistencia de resultados.
-- [ ] Probar con todas las respuestas reales del backend.
-- [ ] Revisar casos con datos vacíos o incompletos.
-- [ ] Conectar el frontend.
-- [ ] Pintar las seis gráficas.
-- [ ] Configurar y validar el despliegue en Render.
+### ¿Qué problema resuelve?
 
-## Historial de cambios
+Esta mini API prepara los datos que necesita el dashboard de PetMind. No
+administra usuarios, mascotas ni donaciones, y tampoco reemplaza al backend
+Spring Boot. Su única responsabilidad es consultar datos, limpiarlos,
+agruparlos y devolverlos listos para las gráficas.
 
-### 2026-11-02
+### Flujo general
 
-- Se creó la API FastAPI de analítica.
-- Se agregó el endpoint único `/api/analytics/dashboard`.
-- Se agregó el endpoint `/health`.
-- Se configuró la consulta al backend desplegado en Render.
-- Se agregó la conversión de JSON a `DataFrame` usando pandas.
-- Se agregó la limpieza de valores vacíos, textos, duplicados y campos
-  técnicos de Hibernate.
-- Se agregaron agrupaciones por especie, estado, fundación y campaña.
-- Se dejó el servicio sin persistencia de datos.
-- Se documentó la ejecución local y el despliegue en Render.
+```text
+Spring Boot
+    ↓ solicita información
+API Python
+    ↓ consulta endpoints del backend
+JSON original
+    ↓ convierte y limpia
+DataFrames de pandas
+    ↓ calcula agrupaciones
+JSON para el dashboard
+    ↓ devuelve la respuesta
+Spring Boot / frontend
+```
+
+La API es stateless. Cada solicitud ejecuta el proceso completo en memoria:
+no crea tablas, no guarda archivos y no conserva los resultados después de
+responder.
+
+### Módulos
+
+#### `app/main.py`
+
+Es la entrada de la aplicación FastAPI. Define los endpoints y coordina el
+proceso:
+
+1. Solicita los datos al cliente HTTP.
+2. Convierte las respuestas en `DataFrame`.
+3. Ejecuta la limpieza.
+4. Construye la respuesta del dashboard.
+5. Devuelve el JSON o un error HTTP.
+
+#### `app/client.py`
+
+Se comunica con el backend Spring Boot usando `httpx`. Actualmente consulta:
+
+```text
+/api/mascotas
+/api/favoritos
+/api/solicitudes-adopcion
+/api/donaciones
+/api/campanas-donacion
+```
+
+La URL base se obtiene de `BACKEND_URL`. Si no se configura, usa:
+
+```text
+https://backend-pet-mind.onrender.com
+```
+
+#### `app/data_cleaning.py`
+
+Transforma cada colección JSON en un `DataFrame` usando
+`pandas.json_normalize`. Esto aplana objetos anidados; por ejemplo,
+`mascota.especie` se convierte en `mascota_especie`.
+
+Después realiza estas tareas:
+
+- Convierte textos vacíos en valores nulos.
+- Elimina únicamente filas completamente vacías.
+- Normaliza espacios y mayúsculas/minúsculas.
+- Elimina campos técnicos de Hibernate.
+- Elimina duplicados exactos.
+- Completa algunos valores numéricos secundarios con el promedio disponible.
+- Clasifica especies faltantes como `OTRO`.
+
+No inventa identificadores, estados, nombres ni relaciones entre entidades.
+
+#### `app/analytics.py`
+
+Trabaja únicamente con los `DataFrame` ya limpios. Calcula las colecciones
+que consumirá el frontend:
+
+- Mascotas por especie.
+- Favoritos por especie.
+- Solicitudes por especie.
+- Solicitudes por estado.
+- Mascotas por fundación.
+- Donaciones por campaña.
+
+### Endpoints disponibles
+
+#### `GET /health`
+
+Comprueba que la aplicación esté funcionando:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+#### `GET /api/analytics/dashboard`
+
+Ejecuta todo el flujo de consulta, limpieza y análisis. Devuelve una respuesta
+con esta estructura:
+
+```json
+{
+  "mascotasPorEspecie": [
+    {
+      "categoria": "PERRO",
+      "cantidad": 10
+    }
+  ],
+  "favoritosPorEspecie": [
+    {
+      "especie": "PERRO",
+      "cantidad": 8
+    }
+  ],
+  "solicitudesPorEspecie": [],
+  "solicitudesPorEstado": [
+    {
+      "categoria": "PENDIENTE",
+      "cantidad": 4
+    }
+  ],
+  "mascotasPorFundacion": [
+    {
+      "fundacion": "Huellas de Esperanza",
+      "cantidad": 6
+    }
+  ],
+  "donacionesPorCampana": [
+    {
+      "campana": "Ayuda Luna",
+      "total": 150.0
+    }
+  ],
+  "metadata": {
+    "mascotasProcesados": 10
+  }
+}
+```
+
+Las listas pueden estar vacías si el backend todavía no tiene registros para
+una relación. Eso no significa que la API haya fallado.
+
+### Integración con Spring Boot
+
+El frontend no debería consultar directamente esta API. Spring Boot debe
+funcionar como intermediario:
+
+```text
+Frontend
+    ↓ GET /api/analitica/dashboard
+Spring Boot
+    ↓ GET /api/analytics/dashboard
+API Python
+    ↓
+Spring Boot devuelve el JSON
+    ↓
+Frontend pinta las gráficas
+```
+
+Para este puente no se necesita una entidad ni un repositorio, porque el
+resultado no se guarda en la base de datos. Puede crearse un controlador y un
+servicio en Spring Boot. Mientras la respuesta siga en desarrollo, Java puede
+recibirla como JSON; cuando sea definitiva, se pueden agregar DTOs.
+
+### Estado actual
+
+La API Python, la limpieza, las agrupaciones y el endpoint del dashboard ya
+están implementados y probados localmente. Queda pendiente crear el
+controlador y el servicio intermediarios en Spring Boot, probar la
+comunicación entre ambos servicios y conectar el frontend.

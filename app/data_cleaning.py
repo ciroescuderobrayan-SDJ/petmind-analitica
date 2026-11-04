@@ -29,6 +29,10 @@ def clean_dataframes(
     for resource_name, dataframe in dataframes.items():
         cleaned_dataframe = clean_empty_values(dataframe)
         cleaned_dataframe = clean_text_columns(cleaned_dataframe)
+        cleaned_dataframe = fill_missing_species(cleaned_dataframe)
+        cleaned_dataframe = fill_non_critical_numeric_values(
+            cleaned_dataframe,
+        )
         cleaned_dataframe = remove_technical_columns(cleaned_dataframe)
         cleaned_dataframe = remove_duplicate_rows(cleaned_dataframe)
 
@@ -47,6 +51,66 @@ def clean_empty_values(dataframe: pd.DataFrame) -> pd.DataFrame:
         regex=True,
     )
     cleaned_dataframe = cleaned_dataframe.dropna(how="all")
+
+    return cleaned_dataframe
+
+
+def fill_missing_species(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Clasifica como OTRO las especies que no vienen informadas."""
+    cleaned_dataframe = dataframe.copy()
+
+    species_columns = [
+        "especie",
+        "mascota_especie",
+    ]
+
+    for column_name in species_columns:
+        if column_name not in cleaned_dataframe.columns:
+            continue
+
+        cleaned_dataframe[column_name] = cleaned_dataframe[column_name].fillna(
+            "OTRO",
+        )
+
+    return cleaned_dataframe
+
+
+def fill_non_critical_numeric_values(
+    dataframe: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Completa algunos valores numericos secundarios usando su promedio.
+
+    No se completan ids, estados, nombres ni relaciones. Si una columna no
+    tiene ningun valor conocido, permanece vacia.
+    """
+    cleaned_dataframe = dataframe.copy()
+
+    columns_to_fill = [
+        "edadMeses",
+        "contadorVisitas",
+        "porcentajeAfinidad",
+        "monto",
+        "montoTotal",
+        "valorComision",
+        "metaMonto",
+        "montoRecaudado",
+    ]
+
+    for column_name in columns_to_fill:
+        if column_name not in cleaned_dataframe.columns:
+            continue
+
+        numeric_values = pd.to_numeric(
+            cleaned_dataframe[column_name],
+            errors="coerce",
+        )
+        average_value = numeric_values.mean()
+
+        if pd.notna(average_value):
+            cleaned_dataframe[column_name] = numeric_values.fillna(
+                average_value,
+            )
 
     return cleaned_dataframe
 
