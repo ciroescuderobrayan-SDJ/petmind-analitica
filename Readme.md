@@ -11,6 +11,18 @@ El servicio es **stateless**:
 - Consulta los datos durante cada solicitud.
 - Devuelve el resultado directamente al consumidor.
 
+## En producción
+
+| Qué | URL |
+|---|---|
+| Esta API | https://petmind-analitica.onrender.com |
+| Documentación interactiva | https://petmind-analitica.onrender.com/docs |
+| Endpoint para el frontend (Spring Boot) | https://backend-pet-mind.onrender.com/api/analitica |
+
+El frontend no consume esta API directamente: llama a Spring Boot, que hace
+de intermediario. Ver [Despliegue en Render](#despliegue-en-render) e
+[Integración con Spring Boot](#integración-con-spring-boot).
+
 ## Flujo de datos
 
 ```text
@@ -43,13 +55,13 @@ app/
 └── main.py            # Define la aplicación FastAPI y sus endpoints.
 ```
 
-El proyecto también conserva `src/` y `Data/` con el código y los archivos
-utilizados durante la etapa inicial de exploración. La API actual utiliza el
-flujo ubicado dentro de `app/`.
+El proyecto también conserva `src/` y `tests/`, con el código y las pruebas
+de la etapa inicial de exploración. La API no los usa: todo su flujo está
+dentro de `app/`.
 
 ## Requisitos
 
-- Python 3.10 o superior.
+- Python 3.12 o superior (lo exige `numpy` 2.5). En producción se usa 3.14.6.
 - Dependencias instaladas desde `requirements.txt`.
 - Acceso al backend de PetMind.
 
@@ -183,14 +195,35 @@ uvicorn app.main:app --reload
 
 ## Despliegue en Render
 
-Configurar el proyecto como **Web Service** con:
+La API está desplegada como **Web Service** en el mismo proyecto de Render que
+el backend (`My project` → `Production`, región Oregon), con esta
+configuración:
 
-```text
-Build command: pip install -r requirements.txt
-Start command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
+| Campo | Valor |
+|---|---|
+| Language | Python 3 |
+| Branch | `main` |
+| Root Directory | *(vacío)* |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| Health Check Path | `/health` |
+| Instance Type | Free |
 
-También se puede configurar `BACKEND_URL` como variable de entorno en Render.
+Variables de entorno:
+
+| Variable | Valor |
+|---|---|
+| `PYTHON_VERSION` | `3.14.6`, la misma versión usada en local |
+| `BACKEND_URL` | `https://backend-pet-mind.onrender.com` |
+
+Cada push a `main` se despliega automáticamente.
+
+El plan Free apaga el servicio después de 15 minutos sin solicitudes, y la
+siguiente solicitud puede tardar 50 segundos o más mientras arranca. El
+backend también usa el plan Free, así que la primera carga del dashboard
+puede tardar más si ambos servicios estaban apagados. Si se llama a esta API
+directamente mientras el backend está apagado, puede responder `502` porque
+el cliente espera como máximo 60 segundos; basta con repetir la solicitud.
 
 ## Documentación funcional
 
@@ -343,29 +376,65 @@ una relación. Eso no significa que la API haya fallado.
 
 ### Integración con Spring Boot
 
-El frontend no debería consultar directamente esta API. Spring Boot debe
-funcionar como intermediario:
+El frontend no consulta directamente esta API. Spring Boot funciona como
+intermediario:
 
 ```text
 Frontend
-    ↓ GET /api/analitica/dashboard
-Spring Boot
+    ↓ GET /api/analitica
+Spring Boot (backend-pet-mind)
     ↓ GET /api/analytics/dashboard
-API Python
-    ↓
-Spring Boot devuelve el JSON
+API Python (petmind-analitica)
+    ↓ consulta /api/mascotas, /api/favoritos, etc. en Spring Boot
+    ↓ devuelve el JSON del dashboard
+Spring Boot reenvía el JSON sin modificarlo
     ↓
 Frontend pinta las gráficas
 ```
 
-Para este puente no se necesita una entidad ni un repositorio, porque el
-resultado no se guarda en la base de datos. Puede crearse un controlador y un
-servicio en Spring Boot. Mientras la respuesta siga en desarrollo, Java puede
-recibirla como JSON; cuando sea definitiva, se pueden agregar DTOs.
+En el repositorio `backend-pet-mind`, el puente está formado por:
+
+- `AnaliticaController`: expone `GET /api/analitica`.
+- `AnaliticaService` y `AnaliticaServiceImpl`: llaman a esta API con
+  `RestClient` y devuelven el JSON tal como llega, sin DTOs.
+- `AnaliticaException`: si esta API falla o devuelve una respuesta vacía,
+  `GlobalExceptionHandler` responde `502 Bad Gateway` con
+  `{"mensaje": "..."}`.
+
+No usa entidades ni repositorios, porque el resultado no se guarda en la base
+de datos.
+
+La URL de esta API se lee en `application.properties`:
+
+```properties
+analitica.api.url=${ANALITICA_API_URL}
+```
+
+`ANALITICA_API_URL` debe ser la URL **completa** del endpoint, porque el
+servicio Java la llama tal cual:
+
+| Entorno | Dónde se define | Valor |
+|---|---|---|
+| Local | `.env` en la raíz del backend | `http://127.0.0.1:8000/api/analytics/dashboard` |
+| Render | Environment del servicio `backend-pet-mind` | `https://petmind-analitica.onrender.com/api/analytics/dashboard` |
+
+La propiedad no tiene valor por defecto: si la variable no existe, el backend
+no arranca.
+
+Para probar todo en local, esta API debe ejecutarse con `BACKEND_URL`
+apuntando al backend local (por ejemplo, `http://localhost:8080`). Si no, la
+API leerá los datos del backend de Render.
 
 ### Estado actual
 
-La API Python, la limpieza, las agrupaciones y el endpoint del dashboard ya
-están implementados y probados localmente. Queda pendiente crear el
-controlador y el servicio intermediarios en Spring Boot, probar la
-comunicación entre ambos servicios y conectar el frontend.
+Actualizado el 7 de noviembre de 2026:
+
+- La API Python, la limpieza, las agrupaciones y el endpoint del dashboard
+  están implementados y desplegados en Render.
+- El puente de Spring Boot (`GET /api/analitica`) está en la rama `main` del
+  backend y desplegado.
+- La cadena completa se probó en producción:
+  `GET https://backend-pet-mind.onrender.com/api/analitica` responde `200`
+  con el JSON del dashboard.
+- Para pintar las gráficas, el frontend debe consumir
+  `GET https://backend-pet-mind.onrender.com/api/analitica`.
