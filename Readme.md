@@ -1,206 +1,371 @@
-# PetMind Analítica
+# PetMind Analytics
 
-Programa de análisis de datos de **PetMind**, hecho en Python con Pandas. Descarga los datos de usuarios y favoritos desde una API, los carga en DataFrames, los limpia, los combina y responde preguntas sobre ellos desde un menú en consola.
+Microservicio de analítica para PetMind. Consulta la información del backend
+Java, la convierte en `DataFrame`, la limpia y devuelve los datos agrupados
+que necesita el frontend para pintar seis gráficas.
 
-## PetMind: los 3 repositorios
+El servicio es **stateless**:
 
-| Repositorio | Rol | Habla con |
-|---|---|---|
-| [frontend-petmind](https://github.com/ciroescuderobrayan-SDJ/frontend-petmind) | Interfaz (React + Vite). | Backend, por HTTP/JSON |
-| [backend-pet-mind](https://github.com/ciroescuderobrayan-SDJ/backend-pet-mind) | API REST (Spring Boot). Reglas de negocio y persistencia en PostgreSQL. | PostgreSQL (Neon) |
-| **petmind-analitica** (este) | Extracción, limpieza y análisis de datos. | Backend, solo lectura |
+- No tiene una base de datos propia.
+- No guarda los JSON procesados.
+- Consulta los datos durante cada solicitud.
+- Devuelve el resultado directamente al consumidor.
 
-```mermaid
-flowchart LR
-    F[Frontend<br/>React + Vite] -- "HTTP / JSON" --> B[Backend<br/>Spring Boot]
-    B -- JPA --> DB[(PostgreSQL<br/>Neon)]
-    A[Analítica<br/>este repositorio] -- "GET /api/*<br/>solo lectura" --> B
-    A --> R[Data/processed<br/>resultados]
-```
-
-**Responsabilidad de este repositorio:** extraer, limpiar y analizar. No escribe en la base de datos ni repite reglas de negocio del backend. Sus resultados (datos limpios y respuestas) son para consulta del equipo y, más adelante, para mostrar indicadores.
-
-## Estado actual
-
-Hoy los datos vienen de **MockAPI**, no del backend de PetMind:
-
-- Usuarios: `https://6ac0faa8309c92da039c3567.mockapi.io/api/v1/user`
-- Favoritos: `https://6ac0faa8309c92da039c3567.mockapi.io/api/v1/favorite`
-
-Los datos de MockAPI traen errores a propósito (ids negativos, ciudades con símbolos, filas vacías, duplicados) para practicar la limpieza. El paso siguiente es leer del backend (ver [Conexión con el backend](#conexión-con-el-backend)).
-
-## Funcionalidades
-
-- Extracción de datos desde una API y guardado en `Data/raw/` (`user.json`, `favorite.json`).
-- Carga de los JSON en DataFrames de Pandas.
-- Limpieza:
-  - Se elimina la columna `password`: no sirve para el análisis y nunca debe imprimirse.
-  - Las fechas (`creation_date`, `last_update`) se convierten a fecha real; las inválidas quedan nulas.
-  - Textos vacíos o con solo espacios pasan a nulos; se eliminan filas totalmente vacías.
-  - Textos en minúsculas y sin espacios repetidos.
-  - Ids inválidos (texto, negativos, decimales, booleanos) pasan a nulos.
-  - Se eliminan registros sin campos obligatorios (`id`, `name`, `email` en usuarios; `id`, `id_user` en favoritos).
-  - Ciudades solo con letras (`"medellín!!!###"` → `"medellín"`).
-  - Ids repetidos y filas duplicadas se eliminan, conservando la primera.
-- Combinación de favoritos con el usuario que los marcó (`merge`).
-- Consultas:
-  1. Usuario con más favoritos.
-  2. Cantidad de favoritos por ciudad.
-  3. Cantidad de usuarios de Medellín.
-
-## Estructura del proyecto
+## Flujo de datos
 
 ```text
-petmind-analitica/
-├── Data/
-│   └── raw/                    JSON descargados de la API
-│       ├── user.json
-│       └── favorite.json
-├── src/
-│   ├── extract/
-│   │   └── fetch_api.py        Opción 1: descarga y guarda los JSON
-│   ├── transform/
-│   │   ├── cargar_datos.py     Opción 2: JSON → DataFrames
-│   │   ├── limpiar_datos.py    Opción 3: limpieza
-│   │   └── combinar_datos.py   Opción 5: merge de favoritos y usuarios
-│   └── analyze/
-│       └── consultas.py        Opción 6: preguntas sobre los datos
-├── tests/                      Pruebas automáticas (unittest)
-├── analisis.py                 Menú principal
-├── requirements.txt
-├── .gitignore
-└── Readme.md
+Backend Spring Boot
+        |
+        | JSON
+        v
+Cliente HTTP de Python
+        |
+        v
+DataFrames de pandas
+        |
+        v
+Limpieza de datos
+        |
+        v
+Agrupaciones para las gráficas
+        |
+        v
+Respuesta JSON
 ```
+
+## Estructura actual
+
+```text
+app/
+├── analytics.py       # Calcula las métricas del dashboard.
+├── client.py          # Consulta los endpoints del backend Java.
+├── data_cleaning.py   # Convierte y limpia los datos con pandas.
+└── main.py            # Define la aplicación FastAPI y sus endpoints.
+```
+
+El proyecto también conserva `src/` y `Data/` con el código y los archivos
+utilizados durante la etapa inicial de exploración. La API actual utiliza el
+flujo ubicado dentro de `app/`.
 
 ## Requisitos
 
-- Python 3.10 o superior (el menú usa `match`).
-- Git.
-- Conexión a internet para descargar los datos (opción 1).
+- Python 3.10 o superior.
+- Dependencias instaladas desde `requirements.txt`.
+- Acceso al backend de PetMind.
 
-## Instalación
+## Instalación local
 
-```bash
-git clone https://github.com/ciroescuderobrayan-SDJ/petmind-analitica.git
-cd petmind-analitica
-python3 -m venv .venv
+Crear y activar un entorno virtual:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-Activa el entorno virtual:
+Instalar las dependencias:
 
-```bash
-# macOS / Linux
-source .venv/bin/activate
-
-# Windows
-.venv\Scripts\activate
+```powershell
+pip install -r requirements.txt
 ```
 
-Instala las dependencias:
+## Ejecutar localmente
 
-```bash
-python -m pip install -r requirements.txt
+Desde la carpeta raíz del proyecto:
+
+```powershell
+uvicorn app.main:app --reload
 ```
 
-## Ejecución
-
-Con el entorno virtual activo:
-
-```bash
-python analisis.py
-```
-
-Menú:
+La API estará disponible en:
 
 ```text
-1. Traer datos desde la API
-2. Cargar datos
-3. Limpiar datos
-4. Imprimir datos limpios
-5. Mergear datos
-6. Consultas de datos
-0. Salir
+http://127.0.0.1:8000
 ```
 
-Orden recomendado: **1 → 2 → 3 → 4 → 5 → 6**. Cada opción avisa si falta el paso anterior.
+La documentación interactiva de FastAPI está disponible en:
 
-1. **Traer datos:** descarga `user.json` y `favorite.json` en `Data/raw/`.
-2. **Cargar datos:** convierte los JSON en DataFrames.
-3. **Limpiar datos:** aplica la limpieza y muestra cuántos registros se eliminaron.
-4. **Imprimir datos limpios:** muestra cada DataFrame, los nulos por columna y el total de registros.
-5. **Mergear datos:** une favoritos con usuarios por `id_user`. Los ids quedan como `id_favorito` e `id_usuario`.
-6. **Consultas:** responde las tres preguntas de la sección Funcionalidades.
-
-## Pruebas automáticas
-
-Usan `unittest`, que viene con Python, así que no hay que instalar nada más:
-
-```bash
-python -m unittest -v
+```text
+http://127.0.0.1:8000/docs
 ```
 
-Cubren la limpieza (ids inválidos, duplicados, ciudades, fechas y contraseñas) y las consultas, incluido el caso sin datos.
+## Endpoints
 
-## Manejo de errores del menú
+### Verificar el estado del servicio
 
-- Si la API no responde (opción 1) o faltan los archivos de `Data/raw` (opción 2), el programa avisa y sigue en el menú.
-- `Ctrl+C` o `Ctrl+D` cierran el programa. Antes un `except:` vacío los atrapaba y el menú quedaba en un ciclo infinito.
+```http
+GET /health
+```
 
-## Conexión con el backend
+Respuesta:
 
-### Cómo debe quedar
+```json
+{
+  "status": "ok"
+}
+```
 
-La analítica lee del backend **por la API REST, en modo solo lectura**, igual que el frontend. No se conecta directo a PostgreSQL. Así:
+### Obtener los datos del dashboard
 
-- No necesita las credenciales de la base de datos.
-- Ve los mismos datos y las mismas reglas que el resto del sistema (por ejemplo, el backend ya oculta los registros con borrado lógico).
+```http
+GET /api/analytics/dashboard
+```
 
-Cambios propuestos, en orden:
+Este endpoint:
 
-1. **URL base configurable.** Leer `PETMIND_API_URL` de un archivo `.env` (por defecto `http://localhost:8080/api`) en lugar de tener las direcciones de MockAPI fijas en `fetch_api.py`.
-2. **Nuevos endpoints** en `ENDPOINTS_API`: `/usuarios`, `/favoritos` y, para más análisis, `/mascotas`, `/donaciones`, `/campanas-donacion`, `/solicitudes-adopcion`.
-3. **Aplanar el JSON** del backend con `pd.json_normalize`, porque trae objetos anidados (`contacto`, `direccion`, `usuario`...).
-4. **Renombrar columnas** a los nombres que ya usa la limpieza, para no reescribirla:
+1. Consulta mascotas, favoritos, solicitudes, donaciones y campañas.
+2. Convierte las respuestas JSON en `DataFrame`.
+3. Limpia valores vacíos, textos, duplicados y campos técnicos de Hibernate.
+4. Calcula las agrupaciones.
+5. Devuelve una colección JSON para el frontend.
 
-   | Backend (JSON) | Columna en la analítica |
-   |---|---|
-   | `nombre` | `name` |
-   | `apellido` | `last_name` |
-   | `contacto.emailContacto` | `email` |
-   | `contacto.telefonoPrincipal` | `phone` |
-   | `direccion.ciudad` | `city` |
-   | `fechaCreacion` | `creation_date` |
-   | `usuario.id` (en favoritos) | `id_user` |
-   | `mascota.id`, `campana.id`, `fundacion.id` | `id_pet`, `id_campaign`, `id_foundation` |
+La limpieza conserva los registros que tienen algunos campos nulos. Solo se
+eliminan filas completamente vacías y duplicados exactos. Algunos campos
+numéricos secundarios, como `edadMeses`, `contadorVisitas`, `monto` y
+`porcentajeAfinidad`, pueden completarse usando el promedio de los valores
+disponibles. Las especies faltantes se clasifican como `OTRO`, que es la
+categoría definida por el proyecto. No se inventan identificadores, estados,
+nombres ni relaciones faltantes.
 
-5. **Guardar resultados** en `Data/processed/` (por ejemplo, `usuarios_limpios.csv`), para que el equipo los consulte sin volver a correr el programa.
+La respuesta contiene actualmente:
 
-> El backend devuelve la contraseña solo en escritura, así que no llega a la analítica. Los datos de MockAPI sí traen un campo `password`: no se debe usar ni imprimir.
+- `mascotasPorEspecie`
+- `favoritosPorEspecie`
+- `solicitudesPorEspecie`
+- `solicitudesPorEstado`
+- `mascotasPorFundacion`
+- `donacionesPorCampana`
+- `metadata`
 
-### Qué hace cada parte
+Ejemplo de estructura:
 
-| Tarea | Dónde |
-|---|---|
-| Validar datos al crear o editar registros | Backend |
-| Limpiar datos históricos o de fuentes externas | Analítica |
-| Calcular indicadores (más favoritos, donaciones por mes, adopciones por ciudad) | Analítica |
-| Mostrar indicadores en pantalla (más adelante) | Frontend, leyendo un endpoint del backend o un archivo generado aquí |
+```json
+{
+  "mascotasPorEspecie": [
+    {
+      "categoria": "PERRO",
+      "cantidad": 10
+    }
+  ],
+  "favoritosPorEspecie": [
+    {
+      "especie": "PERRO",
+      "cantidad": 8
+    }
+  ],
+  "solicitudesPorEstado": [
+    {
+      "categoria": "PENDIENTE",
+      "cantidad": 4
+    }
+  ],
+  "metadata": {
+    "mascotasProcesados": 10
+  }
+}
+```
 
-## Control de versiones
+## Backend consultado
 
-Git Flow:
+Por defecto, el cliente consulta:
 
-- `main`: rama estable.
-- `develop`: rama de integración del equipo.
-- `feature/*`: una rama por funcionalidad, con Pull Request hacia `develop`.
-- `release/analisis-v1`: preparación de la entrega.
+```text
+https://backend-pet-mind.onrender.com
+```
 
-## Integrantes
+La URL puede cambiarse mediante la variable de entorno `BACKEND_URL`.
 
-- Santiago Varela
-- Emmanuel Gómez
-- Brayan Ciro
+En PowerShell:
 
----
+```powershell
+$env:BACKEND_URL = "https://otra-url.example.com"
+uvicorn app.main:app --reload
+```
 
-Proyecto académico · PetMind · CESDE
+## Despliegue en Render
+
+Configurar el proyecto como **Web Service** con:
+
+```text
+Build command: pip install -r requirements.txt
+Start command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+También se puede configurar `BACKEND_URL` como variable de entorno en Render.
+
+## Documentación funcional
+
+### ¿Qué problema resuelve?
+
+Esta mini API prepara los datos que necesita el dashboard de PetMind. No
+administra usuarios, mascotas ni donaciones, y tampoco reemplaza al backend
+Spring Boot. Su única responsabilidad es consultar datos, limpiarlos,
+agruparlos y devolverlos listos para las gráficas.
+
+### Flujo general
+
+```text
+Spring Boot
+    ↓ solicita información
+API Python
+    ↓ consulta endpoints del backend
+JSON original
+    ↓ convierte y limpia
+DataFrames de pandas
+    ↓ calcula agrupaciones
+JSON para el dashboard
+    ↓ devuelve la respuesta
+Spring Boot / frontend
+```
+
+La API es stateless. Cada solicitud ejecuta el proceso completo en memoria:
+no crea tablas, no guarda archivos y no conserva los resultados después de
+responder.
+
+### Módulos
+
+#### `app/main.py`
+
+Es la entrada de la aplicación FastAPI. Define los endpoints y coordina el
+proceso:
+
+1. Solicita los datos al cliente HTTP.
+2. Convierte las respuestas en `DataFrame`.
+3. Ejecuta la limpieza.
+4. Construye la respuesta del dashboard.
+5. Devuelve el JSON o un error HTTP.
+
+#### `app/client.py`
+
+Se comunica con el backend Spring Boot usando `httpx`. Actualmente consulta:
+
+```text
+/api/mascotas
+/api/favoritos
+/api/solicitudes-adopcion
+/api/donaciones
+/api/campanas-donacion
+```
+
+La URL base se obtiene de `BACKEND_URL`. Si no se configura, usa:
+
+```text
+https://backend-pet-mind.onrender.com
+```
+
+#### `app/data_cleaning.py`
+
+Transforma cada colección JSON en un `DataFrame` usando
+`pandas.json_normalize`. Esto aplana objetos anidados; por ejemplo,
+`mascota.especie` se convierte en `mascota_especie`.
+
+Después realiza estas tareas:
+
+- Convierte textos vacíos en valores nulos.
+- Elimina únicamente filas completamente vacías.
+- Normaliza espacios y mayúsculas/minúsculas.
+- Elimina campos técnicos de Hibernate.
+- Elimina duplicados exactos.
+- Completa algunos valores numéricos secundarios con el promedio disponible.
+- Clasifica especies faltantes como `OTRO`.
+
+No inventa identificadores, estados, nombres ni relaciones entre entidades.
+
+#### `app/analytics.py`
+
+Trabaja únicamente con los `DataFrame` ya limpios. Calcula las colecciones
+que consumirá el frontend:
+
+- Mascotas por especie.
+- Favoritos por especie.
+- Solicitudes por especie.
+- Solicitudes por estado.
+- Mascotas por fundación.
+- Donaciones por campaña.
+
+### Endpoints disponibles
+
+#### `GET /health`
+
+Comprueba que la aplicación esté funcionando:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+#### `GET /api/analytics/dashboard`
+
+Ejecuta todo el flujo de consulta, limpieza y análisis. Devuelve una respuesta
+con esta estructura:
+
+```json
+{
+  "mascotasPorEspecie": [
+    {
+      "categoria": "PERRO",
+      "cantidad": 10
+    }
+  ],
+  "favoritosPorEspecie": [
+    {
+      "especie": "PERRO",
+      "cantidad": 8
+    }
+  ],
+  "solicitudesPorEspecie": [],
+  "solicitudesPorEstado": [
+    {
+      "categoria": "PENDIENTE",
+      "cantidad": 4
+    }
+  ],
+  "mascotasPorFundacion": [
+    {
+      "fundacion": "Huellas de Esperanza",
+      "cantidad": 6
+    }
+  ],
+  "donacionesPorCampana": [
+    {
+      "campana": "Ayuda Luna",
+      "total": 150.0
+    }
+  ],
+  "metadata": {
+    "mascotasProcesados": 10
+  }
+}
+```
+
+Las listas pueden estar vacías si el backend todavía no tiene registros para
+una relación. Eso no significa que la API haya fallado.
+
+### Integración con Spring Boot
+
+El frontend no debería consultar directamente esta API. Spring Boot debe
+funcionar como intermediario:
+
+```text
+Frontend
+    ↓ GET /api/analitica/dashboard
+Spring Boot
+    ↓ GET /api/analytics/dashboard
+API Python
+    ↓
+Spring Boot devuelve el JSON
+    ↓
+Frontend pinta las gráficas
+```
+
+Para este puente no se necesita una entidad ni un repositorio, porque el
+resultado no se guarda en la base de datos. Puede crearse un controlador y un
+servicio en Spring Boot. Mientras la respuesta siga en desarrollo, Java puede
+recibirla como JSON; cuando sea definitiva, se pueden agregar DTOs.
+
+### Estado actual
+
+La API Python, la limpieza, las agrupaciones y el endpoint del dashboard ya
+están implementados y probados localmente. Queda pendiente crear el
+controlador y el servicio intermediarios en Spring Boot, probar la
+comunicación entre ambos servicios y conectar el frontend.
