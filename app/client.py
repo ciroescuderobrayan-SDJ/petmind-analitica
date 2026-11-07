@@ -16,6 +16,8 @@ ENDPOINTS = {
     "solicitudes": "/api/solicitudes-adopcion",
     "donaciones": "/api/donaciones",
     "campanas": "/api/campanas-donacion",
+    # Las mascotas solo traen fundacionId: el nombre se cruza con esta lista.
+    "fundaciones": "/api/fundaciones",
 }
 
 

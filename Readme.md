@@ -124,7 +124,7 @@ GET /api/analytics/dashboard
 
 Este endpoint:
 
-1. Consulta mascotas, favoritos, solicitudes, donaciones y campañas.
+1. Consulta mascotas, favoritos, solicitudes, donaciones, campañas y fundaciones.
 2. Convierte las respuestas JSON en `DataFrame`.
 3. Limpia valores vacíos, textos, duplicados y campos técnicos de Hibernate.
 4. Calcula las agrupaciones.
@@ -141,12 +141,20 @@ nombres ni relaciones faltantes.
 La respuesta contiene actualmente:
 
 - `mascotasPorEspecie`
+- `mascotasPorEstadoAdopcion`: cuántas mascotas están disponibles, en proceso, adoptadas o en tratamiento.
+- `mascotasPorSemana`: mascotas publicadas cada semana (de lunes a domingo, por `fechaPublicacion` o, si falta,
+  `fechaCreacion`). Las semanas sin publicaciones van en cero: `[{ "semana": "2026-10-26", "cantidad": 7 }]`.
 - `favoritosPorEspecie`
 - `solicitudesPorEspecie`
 - `solicitudesPorEstado`
 - `mascotasPorFundacion`
 - `donacionesPorCampana`
 - `metadata`
+
+El backend devuelve las relaciones solo como ids (`fundacionId`, `mascotaId`). Para nombrar la fundación de
+cada mascota se cruza `fundacionId` con `/api/fundaciones`, y para la especie de cada solicitud o favorito se
+cruza `mascotaId` con `/api/mascotas`. Si algún día el backend envía los objetos anidados (`fundacion.nombre`,
+`mascota.especie`), también se aceptan.
 
 Ejemplo de estructura:
 
